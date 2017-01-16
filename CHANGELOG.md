@@ -9,7 +9,7 @@
 
 * Several new models were implemented:
     * The System-2 model of [van den Bos and McClure](http://onlinelibrary.wiley.com/doi/10.1002/jeab.6/abstract).
-    * The Hyperboloid model of [Green and Myerseon](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1382186/#R36), which
+    * The Hyperboloid model of [Green and Myerseon](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1382186), which
         is equivalent to the Generalized Hyperbolic model of [Loewenstein and
         Prelec](http://qje.oxfordjournals.org/content/107/2/573.short).
     * Variants of the classical discounting models were added that included

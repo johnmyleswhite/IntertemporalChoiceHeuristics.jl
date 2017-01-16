@@ -1,0 +1,634 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+
+\begin{document}
+
+\section{Gradient Calculations for All Models}
+
+For all models, the negative log likelihood function for a vector of parameters
+$\theta$ holding fixed a dataset consisting of $N$ tuples of the form
+$(x^2_i, t^2_i, x^1_i, t^1_i, y_i)$ is:
+
+\[
+-\mathcal{L}(\theta) = -\sum_{i = 1}^{N} y_i \log(p_i) + (1 - y_i) \log(1 - p_i)
+\]
+
+We can treat all models as embedded inside of the $\epsilon$-noise formulation
+since we can always set $\epsilon = 0$ when the additional noise is not
+appropriate. In this formulation, the probability that $y_i = 1$ is $p_i$,
+which is derived from an inner probability without $\epsilon$-noise. We'll call
+the inner probability $\tilde{p_i}$. The two probabilities are related as
+follows:
+
+\[
+p_i = (1 - \epsilon) \tilde{p}_i + \epsilon (\frac{1}{2})
+\]
+
+Because we always generate $\tilde{p_i}$ using an inverse logit link function
+of a predictor, we can write $\tilde{p_i}$ as a function of the (potentially
+non-linear) predictor value, $z_i$:
+
+\[
+\tilde{p}_i = L(z_i) = (1 + \exp(-z_i))^{-1}
+\]
+
+The linear relationship between $p_i$ and $\tilde{p_i}$ implies that their
+derivatives with respect to model parameters are related as follows:
+
+\[
+\frac{\partial}{\partial \theta_j} p_i
+  = (1 - \epsilon) \frac{\partial}{\partial \theta_j} \tilde{p}_i
+\]
+
+A nice property of the inverse link function is that its derivative can be
+written in terms of a simple function of its value:
+
+\[
+\frac{\partial}{\partial z_i} L(z_i)
+  = L(z_i) (1 - L(z_i)) = \tilde{p_i} (1 - \tilde{p_i})
+\]
+
+Given all of this, we can compute gradients with regard to the $j$-th parameter
+$\theta_j$ as follows using repeated applications of the chain rule to drill
+down to the places where different models have different functional forms,
+which generates different gradients for different parameters:
+
+\begin{equation*}
+\begin{split}
+\frac{\partial}{\partial \theta_j} -\mathcal{L}(\theta)
+  &= -\sum_{i = 1}^{N}
+    y_i \frac{\partial}{\partial \theta_j} \log(p_i)
+    + (1 - y_i) \frac{\partial}{\partial \theta_j} \log(1 - p_i) \\
+  &= -\sum_{i = 1}^{N}
+    y_i \frac{1}{p_i} \frac{\partial}{\partial \theta_j} p_i
+    + (1 - y_i) \frac{1}{1 - p_i} \frac{\partial}{\partial \theta_j} (1 - p_i) \\
+  &= -\sum_{i = 1}^{N}
+    y_i \frac{1}{p_i} \frac{\partial}{\partial \theta_j} p_i
+    - (1 - y_i) \frac{1}{1 - p_i} \frac{\partial}{\partial \theta_j} p_i \\
+  &= -\sum_{i = 1}^{N}
+    y_i \frac{1}{p_i} (1 - \epsilon) \frac{\partial}{\partial \theta_j} \tilde{p_i}
+    - (1 - y_i) \frac{1}{1 - p_i} (1 - \epsilon) \frac{\partial}{\partial \theta_j} \tilde{p_i} \\
+  &= -\sum_{i = 1}^{N}
+    y_i \frac{1}{p_i} (1 - \epsilon) \tilde{p_i} (1 - \tilde{p_i}) \frac{\partial}{\partial \theta_j} z_i
+    - (1 - y_i) \frac{1}{1 - p_i} (1 - \epsilon) \tilde{p_i} (1 - \tilde{p_i}) \frac{\partial}{\partial \theta_j} z_i \\
+\end{split}
+\end{equation*}
+
+In the special case in which $\epsilon = 0$, this last equation simplifies
+considerably because $p_i = \tilde{p_i}$ when $\epsilon = 0$:
+
+\begin{equation*}
+\begin{split}
+\frac{\partial}{\partial \theta_j} - \mathcal{L}(\theta)
+  &= -\sum_{i = 1}^{N} y_i (1 - p_i) \frac{\partial}{\partial \theta_j} z_i
+    - (1 - y_i) p_i \frac{\partial}{\partial \theta_j} z_i \\
+  &= -\sum_{i = 1}^{N} (y_i - p_i) \frac{\partial}{\partial \theta_j} z_i \\
+  &= \sum_{i = 1}^{N} (p_i - y_i) \frac{\partial}{\partial \theta_j} z_i \\
+\end{split}
+\end{equation*}
+
+\section{Gradient Calculations for Specific Models}
+
+\subsection{Gradient Calculations for Baseline}
+
+\begin{align*}
+\theta &= (\beta_0) \\
+z_i &= \beta_0 \\
+\frac{\partial}{\partial \beta_0} z_i &= 1 \\
+\end{align*}
+
+\subsection{Gradient Calculations for ITCH}
+
+\begin{align*}
+\theta &= (\beta_0, \beta_1, \beta_2, \beta_3, \beta_4) \\
+z_i &= \beta_0
+  + \beta_1 (x^2_i - x^1_i)
+  + \beta_2 (\frac{x^2_i - x^1_i}{\frac{x^2_i + x^1_i}{2}})
+  + \beta_3 (t^2_i - t^1_i)
+  + \beta_4 (\frac{t^2_i - t^1_i}{\frac{t^2_i + t^1_i}{2}}) \\
+\frac{\partial}{\partial \beta_0} z_i &= 1 \\
+\frac{\partial}{\partial \beta_1} z_i &= x^2_i - x^1_i \\
+\frac{\partial}{\partial \beta_2} z_i &= \frac{x^2_i - x^1_i}{\frac{x^2_i + x^1_i}{2}} \\
+\frac{\partial}{\partial \beta_3} z_i &= t^2_i - t^1_i \\
+\frac{\partial}{\partial \beta_4} z_i &= \frac{t^2_i - t^1_i}{\frac{t^2_i + t^1_i}{2}} \\
+\end{align*}
+
+\subsection{Gradient Calculations for DRIFT}
+
+\begin{align*}
+\theta &= (\beta_0, \beta_1, \beta_2, \beta_3, \beta_4) \\
+z_i &= \beta_0
+  + \beta_1 (x^2_i - x^1_i)
+  + \beta_2 (\frac{x^2_i - x^1_i}{x^1_i})
+  + \beta_3 (\frac{x^2_i}{x^1_i}^{\frac{1}{t^2_i - t^1_i}} - 1)
+  + \beta_4 (t^2_i - t^1_i) \\
+\frac{\partial}{\partial \beta_0} z_i &= 1 \\
+\frac{\partial}{\partial \beta_1} z_i &= x^2_i - x^1_i \\
+\frac{\partial}{\partial \beta_2} z_i &= \frac{x^2_i - x^1_i}{x^1_i} \\
+\frac{\partial}{\partial \beta_3} z_i &= \frac{x^2_i}{x^1_i}^{\frac{1}{t^2_i - t^1_i}} - 1 \\
+\frac{\partial}{\partial \beta_4} z_i &= t^2_i - t^1_i \\
+\end{align*}
+
+\subsection{Gradient Calculations for Trade-Off}
+
+\begin{align*}
+\theta &= (a, k, \gamma_x, \gamma_t) \\
+z_i &= a(
+  \phi(x^2_i, \gamma_x) - \phi(x^1_i, \gamma_x)
+  - k * (\phi(t^2_i, \gamma_t) - \phi(t^1_i, \gamma_t))
+) \\
+\phi(\chi, \gamma) &= \frac{\log(1 + \gamma \chi)}{\gamma} \\
+\phi^{\prime}(\chi, \gamma)
+  &= \frac{\frac{\gamma \chi}{1 + \gamma \chi} - \log(1 + \gamma \chi)}{\gamma^2} \\
+\frac{\partial}{\partial a} z_i
+  &= \phi(x^2_i, \gamma_x) - \phi(x^1_i, \gamma_x)
+    - k * (\phi(t^2_i, \gamma_t) - \phi(t^1_i, \gamma_t)) \\
+\frac{\partial}{\partial k} z_i
+  &= -a (\phi(t^2_i, \gamma_t) - \phi(t^1_i, \gamma_t))) \\
+\frac{\partial}{\partial \gamma_x} z_i
+  &= a(\phi^{\prime}(x^2_i, \gamma_x) - \phi^{\prime}(x^1_i, \gamma_x)) \\
+\frac{\partial}{\partial \gamma_t} z_i
+  &= -a k (\phi^{\prime}(t^2_i, \gamma_t) - \phi^{\prime}(t^1_i, \gamma_t)) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < k < \infty$}
+    \item{$0 < \gamma_x < \infty$}
+    \item{$0 < \gamma_t < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Exponential}
+
+\begin{align*}
+  \theta &= (a, \delta) \\
+  z_i &= a (x^2_i \delta^{t^2_i} - x^1_i \delta^{t^1_i}) \\
+  \frac{\partial}{\partial a} z_i
+    &= x^2_i \delta^{t^2_i} - x^1_i \delta^{t^1_i} \\
+  \frac{\partial}{\partial \delta} z_i
+    &= a (x^2_i t^2_i \delta^{t^2_i - 1} - x^1_i t^1_i \delta^{t^1_i - 1}) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \delta < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Exponential with Intercept}
+
+\begin{align*}
+  \theta &= (a, \delta, \beta_0) \\
+  z_i &= \beta_0 + a (x^2_i \delta^{t^2_i} - x^1_i \delta^{t^1_i}) \\
+  \frac{\partial}{\partial a} z_i
+    &= x^2_i \delta^{t^2_i} - x^1_i \delta^{t^1_i} \\
+  \frac{\partial}{\partial \delta} z_i
+    &= a (x^2_i t^2_i \delta^{t^2_i - 1} - x^1_i t^1_i \delta^{t^1_i - 1}) \\
+  \frac{\partial}{\partial \beta_0} z_i
+    &= 1
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \delta < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Homothetic Exponential}
+
+\begin{align*}
+\theta &= (a, \delta) \\
+z_i &= a (\log(x^2_i \delta^{t^2_i}) - \log(x^1_i \delta^{t^1_i})) \\
+\frac{\partial}{\partial a} z_i
+  &= (\log(x^2_i \delta^{t^2_i}) - \log(x^1_i \delta^{t^1_i})) \\
+\frac{\partial}{\partial \delta} z_i
+  &= a (
+      \frac{1}{x^2_i \delta^{t^2_i}} x^2_i t^2_i  \delta^{t^2_i - 1} -
+      \frac{1}{x^1_i \delta^{t^1_i}} x^1_i t^1_i \delta^{t^1_i - 1}
+    ) \\
+  &= a (t^2_i \delta^{-1} - t^1_i \delta^{-1}) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \delta < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Hyperbolic}
+
+\begin{align*}
+\theta &= (a, \alpha) \\
+z_i &= a (x^2_i (1 + \alpha t^2_i)^{-1} - x^1_i (1 + \alpha t^1_i)^{-1}) \\
+\frac{\partial}{\partial a} z_i
+  &= (x^2_i (1 + \alpha t^2_i)^{-1} - x^1_i (1 + \alpha t^1_i)^{-1}) \\
+\frac{\partial}{\partial \alpha} z_i
+  &= a (
+    x^2_i (-1) (1 + \alpha t^2_i)^{-2} t^2_i
+    - x^1_i (-1) (1 + \alpha t^1_i)^{-2} t^1_i
+  ) \\
+  &= a (
+    x^1_i (1 + \alpha t^1_i)^{-2} t^1_i
+    - x^2_i (1 + \alpha t^2_i)^{-2} t^2_i
+  ) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \alpha < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Homothetic Hyperbolic}
+
+\begin{align*}
+  z_i &= a (
+    \log(x^2_i (1 + \alpha t^2_i)^{-1})
+    - \log(x^1_i (1 + \alpha t^1_i)^{-1})
+  ) \\
+  \theta &= (a, \alpha) \\
+  \frac{\partial}{\partial a} z_i
+    &= (\log(x^2_i (1 + \alpha t^2_i)^{-1}) - \log(x^1_i (1 + \alpha t^1_i)^{-1})) \\
+  \frac{\partial}{\partial \alpha} z_i
+    &= a (\frac{x^2_i (-1) (1 + \alpha t^2_i)^{-2} t^2_i}{x^2_i (1 + \alpha t^2_i)^{-1}}
+      - \frac{x^1_i (-1) (1 + \alpha t^1_i)^{-2} t^1_i}{x^1_i (1 + \alpha t^1_i)^{-1}}) \\
+    &= a (t^1_i (1 + \alpha t^1_i)^{-1} - t^2_i (1 + \alpha t^2_i)^{-1}) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \alpha < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Hyperbolic with Intercept}
+
+\begin{align*}
+\theta &= (a, \alpha, \beta_0) \\
+z_i &= \beta_0 + a (x^2_i (1 + \alpha t^2_i)^{-1} - x^1_i (1 + \alpha t^1_i)^{-1}) \\
+\frac{\partial}{\partial a} z_i
+  &= (x^2_i (1 + \alpha t^2_i)^{-1} - x^1_i (1 + \alpha t^1_i)^{-1}) \\
+\frac{\partial}{\partial \alpha} z_i
+  &= a (
+    x^2_i (-1) (1 + \alpha t^2_i)^{-2} t^2_i
+    - x^1_i (-1) (1 + \alpha t^1_i)^{-2} t^1_i
+  ) \\
+\frac{\partial}{\partial \beta_0} z_i &= 1 \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \alpha < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Hyperboloid}
+
+\begin{align*}
+\theta &= (a, \alpha, \mu) \\
+z_i &= a (x^2_i (1 + \alpha t^2_i)^{-\mu} - x^1_i (1 + \alpha t^1_i)^{-\mu}) \\
+\frac{\partial}{\partial a} z_i
+  &= (x^2_i (1 + \alpha t^2_i)^{-\mu} - x^1_i (1 + \alpha t^1_i)^{-\mu}) \\
+\frac{\partial}{\partial \alpha} z_i
+  &= a (
+    x^2_i (-\mu) (1 + \alpha t^2_i)^{-\mu - 1} t^2_i
+    - x^1_i (-\mu) (1 + \alpha t^1_i)^{-\mu - 1} t^1_i
+  ) \\
+\frac{\partial}{\partial \mu} z_i
+  &= a (
+    -x^2_i (1 + \alpha t^2_i)^{-\mu} \log(1 + \alpha t^2_i)
+    - (-x^1_i) (1 + \alpha t^1_i)^{-\mu} \log(1 + \alpha t^1_i)
+  ) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \alpha < \infty$}
+    \item{$0 < \mu < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Homothetic Hyperboloid}
+
+\begin{align*}
+\theta &= (a, \alpha, \mu) \\
+z_i &= a (
+  \log(x^2_i (1 + \alpha t^2_i)^{-\mu})
+  - \log(x^1_i (1 + \alpha t^1_i)^{-\mu})
+) \\
+\frac{\partial}{\partial a} z_i
+  &= \log(x^2_i (1 + \alpha t^2_i)^{-\mu})
+  - \log(x^1_i (1 + \alpha t^1_i)^{-\mu}) \\
+\frac{\partial}{\partial \alpha} z_i
+  &= a (
+    \frac{1}{x^2_i (1 + \alpha t^2_i)^{-\mu}} x^2_i (-\mu) (1 + \alpha t^2_i)^{-\mu - 1} t^2_i
+    - \frac{1}{x^1_i (1 + \alpha t^1_i)^{-\mu}} x^1_i (-\mu) (1 + \alpha t^1_i)^{-\mu - 1} t^1_i
+  ) \\
+  &= a (
+    (-\mu) (1 + \alpha t^2_i)^{-1} t^2_i
+    - (-\mu) (1 + \alpha t^1_i)^{-1} t^1_i
+  ) \\
+  &= a \mu ((1 + \alpha t^1_i)^{-1} t^1_i - (1 + \alpha t^2_i)^{-1} t^2_i) \\
+\frac{\partial}{\partial \mu} z_i
+  &= a (
+    \frac{1}{x^2_i (1 + \alpha t^2_i)^{-\mu}} (-x^2_i) (1 + \alpha t^2_i)^{-\mu} \log(1 + \alpha t^2_i)
+    - \frac{1}{x^1_i (1 + \alpha t^1_i)^{-\mu}} (-x^1_i) (1 + \alpha t^1_i)^{-\mu} \log(1 + \alpha t^1_i)
+  ) \\
+  &= a (
+    -\log(1 + \alpha t^2_i) - (-\log(1 + \alpha t^1_i))
+  ) \\
+  &= a (\log(1 + \alpha t^1_i) - \log(1 + \alpha t^2_i)) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \alpha < \infty$}
+    \item{$0 < \mu < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Hyperboloid with Intercept}
+
+\begin{align*}
+\theta &= (a, \alpha, \mu, \beta_0) \\
+z_i &= a (x^2_i (1 + \alpha t^2_i)^{-\mu} - x^1_i (1 + \alpha t^1_i)^{-\mu}) \\
+\frac{\partial}{\partial a} z_i
+  &= (x^2_i (1 + \alpha t^2_i)^{-\mu} - x^1_i (1 + \alpha t^1_i)^{-\mu}) \\
+\frac{\partial}{\partial \alpha} z_i
+  &= a (
+    x^2_i (-\mu) (1 + \alpha t^2_i)^{-\mu - 1} t^2_i
+    - x^1_i (-\mu) (1 + \alpha t^1_i)^{-\mu - 1} t^1_i
+  ) \\
+\frac{\partial}{\partial \mu} z_i
+  &= a (
+    -x^2_i (1 + \alpha t^2_i)^{-\mu} \log(1 + \alpha t^2_i)
+    - (-x^1_i) (1 + \alpha t^1_i)^{-\mu} \log(1 + \alpha t^1_i)
+  ) \\
+\frac{\partial}{\partial \beta_0} z_i
+  &= 1
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \alpha < \infty$}
+    \item{$0 < \mu < \infty$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Quasi-Hyperbolic}
+
+\begin{align*}
+\theta &= (a, \beta, \delta) \\
+z_i &= a (
+  x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i}
+  - x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i}
+) \\
+\frac{\partial}{\partial a} z_i
+  &= x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i}
+  - x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i} \\
+\frac{\partial}{\partial \beta} z_i
+  &= a (x^2_i I(t_2 > 0) \delta^{t^2_i} - x^1_i I(t_1 > 0) \delta^{t^1_i}) \\
+\frac{\partial}{\partial \delta} z_i
+  &= a (
+    x^2_i \beta^{I(t_2 > 0)} t^2_i \delta^{t^2_i - 1}
+    - x^1_i \beta^{I(t_1 > 0)} t^1_i \delta^{t^1_i - 1}
+  ) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \beta < 1$}
+    \item{$0 < \delta < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Homothetic Quasi-Hyperboloid}
+
+\begin{align*}
+\theta &= (a, \beta, \delta) \\
+z_i &= a (
+  \log(x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i})
+  - \log(x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i})
+) \\
+\frac{\partial}{\partial a} z_i
+  &= \log(x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i})
+  - \log(x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i}) \\
+\frac{\partial}{\partial \beta} z_i
+  &= a (
+    \frac{1}{x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i}} x^2_i I(t_2 > 0) \delta^{t^2_i}
+    - \frac{1}{x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i}} x^1_i I(t_1 > 0) \delta^{t^1_i}
+  ) \\
+  &= a (
+    \frac{I(t_2 > 0)}{\beta^{I(t_2 > 0)}}
+    - \frac{I(t_1 > 0)}{\beta^{I(t_1 > 0)}}
+  ) \\
+\frac{\partial}{\partial \delta} z_i
+  &= a (
+    \frac{1}{x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i}} x^2_i \beta^{I(t_2 > 0)} t^2_i \delta^{t^2_i - 1}
+    - \frac{1}{x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i}} x^1_i \beta^{I(t_1 > 0)} t^1_i \delta^{t^1_i - 1}
+  ) \\
+  &= a (
+    t^2_i \delta^{-1}
+    - t^1_i \delta^{-1}
+  ) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \beta < 1$}
+    \item{$0 < \delta < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard Quasi-Hyperboloid with Intercept}
+
+\begin{align*}
+\theta &= (a, \beta, \delta, \beta_0) \\
+z_i &= \beta_0 + a (
+  x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i}
+  - x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i}
+) \\
+\frac{\partial}{\partial a} z_i
+  &= x^2_i \beta^{I(t_2 > 0)} \delta^{t^2_i}
+  - x^1_i \beta^{I(t_1 > 0)} \delta^{t^1_i} \\
+\frac{\partial}{\partial \beta} z_i
+  &= a (x^2_i I(t_2 > 0) \delta^{t^2_i} - x^1_i I(t_1 > 0) \delta^{t^1_i}) \\
+\frac{\partial}{\partial \delta} z_i
+  &= a (
+    x^2_i \beta^{I(t_2 > 0)} t^2_i \delta^{t^2_i - 1}
+    - x^1_i \beta^{I(t_1 > 0)} t^1_i \delta^{t^1_i - 1}
+  ) \\
+\frac{\partial}{\partial \beta_0} z_i &= 1 \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \beta < 1$}
+    \item{$0 < \delta < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard System-2}
+
+\begin{align*}
+  \theta &= (a, \omega, \delta_1, \delta_2) \\
+  z_i &= a (
+    x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})
+    - x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})
+  ) \\
+  \frac{\partial}{\partial a} z_i
+    &= (
+      x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})
+      - x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})
+    ) \\
+  \frac{\partial}{\partial \omega} z_i
+    &= a (
+      x^2_i (\delta_1^{t^2_i} - \delta_2^{t^2_i})
+      - x^1_i (\delta_1^{t^1_i} - \delta_2^{t^1_i})
+    ) \\
+  \frac{\partial}{\partial \delta_1} z_i
+    &= a (
+      x^2_i \omega t^2_i \delta_1^{t^2_i - 1}
+      - x^1_i \omega t^1_i \delta_1^{t^1_i - 1}
+    ) \\
+  \frac{\partial}{\partial \delta_2} z_i
+    &= a (
+      x^2_i (1 - \omega) t^2_i \delta_2^{t^2_i - 1}
+      - x^1_i (1 - \omega) t^1_i \delta_2^{t^1_i - 1}
+    ) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \delta_1 < 1$}
+    \item{$0 < \delta_2 < 1$}
+    \item{$0 < \omega < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Homothetic System-2}
+
+\begin{align*}
+  \theta &= (a, \omega, \delta_1, \delta_2) \\
+  z_i &= a (
+    \log(x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i}))
+    - \log(x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i}))
+  ) \\
+  \frac{\partial}{\partial a} z_i
+    &= (
+      \log(x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i}))
+      - \log(x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i}))
+    ) \\
+  \frac{\partial}{\partial \omega} z_i
+    &= a (
+      \frac{x^2_i (\delta_1^{t^2_i} - \delta_2^{t^2_i})}{x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})}
+      - \frac{x^1_i (\delta_1^{t^1_i} - \delta_2^{t^1_i})}{x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})}
+    ) \\
+    &= a (
+      \frac{\delta_1^{t^2_i} - \delta_2^{t^2_i}}{\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i}}
+      - \frac{\delta_1^{t^1_i} - \delta_2^{t^1_i}}{\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i}}
+    ) \\
+  \frac{\partial}{\partial \delta_1} z_i
+    &= a (
+      \frac{x^2_i \omega t^2_i \delta_1^{t^2_i - 1}}{x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})}
+      - \frac{x^1_i \omega t^1_i \delta_1^{t^1_i - 1}}{x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})}
+    ) \\
+    &= a (
+      \frac{\omega t^2_i \delta_1^{t^2_i - 1}}{\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i}}
+      - \frac{\omega t^1_i \delta_1^{t^1_i - 1}}{\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i}}
+    ) \\
+  \frac{\partial}{\partial \delta_2} z_i
+    &= a (
+      \frac{x^2_i (1 - \omega) t^2_i \delta_2^{t^2_i - 1}}{x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})}
+      - \frac{x^1_i (1 - \omega) t^1_i \delta_2^{t^1_i - 1}}{x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})}
+    ) \\
+    &= a (
+      \frac{(1 - \omega) t^2_i \delta_2^{t^2_i - 1}}{\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i}}
+      - \frac{(1 - \omega) t^1_i \delta_2^{t^1_i - 1}}{\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i}}
+    ) \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \delta_1 < 1$}
+    \item{$0 < \delta_2 < 1$}
+    \item{$0 < \omega < 1$}
+\end{itemize}
+
+\subsection{Gradient Calculations for Standard System-2 with Intercept}
+
+\begin{align*}
+  \theta &= (a, \omega, \delta_1, \delta_2, \beta_0) \\
+  z_i &= \beta_0 + a (
+    x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})
+    - x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})
+  ) \\
+  \frac{\partial}{\partial a} z_i
+    &= (
+      x^2_i (\omega \delta_1^{t^2_i} + (1 - \omega) \delta_2^{t^2_i})
+      - x^1_i (\omega \delta_1^{t^1_i} + (1 - \omega) \delta_2^{t^1_i})
+    ) \\
+  \frac{\partial}{\partial \omega} z_i
+    &= a (
+      x^2_i (\delta_1^{t^2_i} - \delta_2^{t^2_i})
+      - x^1_i (\delta_1^{t^1_i} - \delta_2^{t^1_i})
+    ) \\
+  \frac{\partial}{\partial \delta_1} z_i
+    &= a (
+      x^2_i \omega t^2_i \delta_1^{t^2_i - 1}
+      - x^1_i \omega t^1_i \delta_1^{t^1_i - 1}
+    ) \\
+  \frac{\partial}{\partial \delta_2} z_i
+    &= a (
+      x^2_i (1 - \omega) t^2_i \delta_2^{t^2_i - 1}
+      - x^1_i (1 - \omega) t^1_i \delta_2^{t^1_i - 1}
+    ) \\
+  \frac{\partial}{\partial \beta_0} z_i &= 1 \\
+\end{align*}
+
+Note constraints:
+
+\begin{itemize}
+    \item{$0 < a < \infty$}
+    \item{$0 < \delta_1 < 1$}
+    \item{$0 < \delta_2 < 1$}
+    \item{$0 < \omega < 1$}
+\end{itemize}
+
+\section{Handling Constraints}
+Note that the results shown above all apply to the raw model specification,
+which involves constraints that will necessitate the use of a constrained
+optimization routine. It is often convenient to be able to use an unconstrained
+optimization routine instead by assuming that optima never occur near the
+boundaries of the open sets used to constrain the model parameters.
+
+The notes above show that only two types of constraints are needed for the
+models under consideration: constraints to $(0, \infty)$ and to $(0, 1)$. We
+can map unconstrained parameters to these constrained spaces using
+$\exp(\theta_j)$ to map $(-\infty, \infty)$ to $(0, \infty)$ and by using
+$L(\theta) = (1 + \exp(-\theta_j))^{-1}$ to map $(-\infty, \infty)$ to
+$(0, 1)$. When calculating the gradients of the negative log likelihood under
+these unconstrained reparameterizations of the models, we need to introduce an
+additional term of $\exp(\theta_j)$ to handle the first mapping and an
+additional term of $L(\theta_j) (1 - L(\theta_j))$ to handle the second
+mapping.
+
+\end{document}

@@ -1,0 +1,11 @@
+doc/gradients.aux
+doc/gradients.log
+examples/MLE/estimates.tsv
+examples/MLE/performance.csv
+examples/cross_validation/graphs
+examples/cross_validation/replicates.tsv
+examples/cross_validation/performance.csv
+examples/bootstrap/graphs
+examples/bootstrap/replicates.tsv
+examples/profile_likelihood/graphs
+examples/profile_likelihood/grid.tsv

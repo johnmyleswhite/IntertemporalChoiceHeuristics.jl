@@ -1,4 +1,4 @@
-module CheckGradients
+module TestGradients
     verbose = false
 
     using Base.Test
@@ -19,7 +19,7 @@ module CheckGradients
 
     λ = 0.0
 
-    @testset "All models" begin
+    @testset "Analytic gradients match AD gradients" begin
         for model in models
             for loss in training_losses
                 res = fit(model, inputs, weights, loss)

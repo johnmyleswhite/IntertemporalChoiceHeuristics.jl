@@ -1,4 +1,4 @@
-module TestBasicFits
+module TestFits
     verbose = false
 
     import IntertemporalChoiceHeuristics:
@@ -11,8 +11,7 @@ module TestBasicFits
 
     for model in models
         for loss in training_losses
-            @time res = fit(model, inputs, weights, loss)
-            @time res = fit(model, inputs, weights, loss)
+            res = fit(model, inputs, weights, loss)
             if verbose
                 println(model)
                 println(loss)

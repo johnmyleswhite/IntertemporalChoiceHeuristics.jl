@@ -1,4 +1,4 @@
-module TestShowMethods
+module TestShow
     verbose = false
 
     import IntertemporalChoiceHeuristics: models, initial_parameters

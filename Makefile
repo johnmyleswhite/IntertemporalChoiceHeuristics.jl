@@ -14,14 +14,14 @@ cross_validation:
 	rm -rf examples/cross_validation/graphs
 	rm -f examples/cross_validation/replicates.tsv
 	rm -f examples/cross_validation/performance.csv
-	julia examples/cross_validation/generate_replicates.jl > examples/cross_validation/replicates.tsv
+	julia examples/cross_validation/generate_replicates.jl examples/cross_validation/replicates.tsv
 	mkdir examples/cross_validation/graphs
 	Rscript examples/cross_validation/analyze_replicates.R
 
 bootstrap:
 	rm -rf examples/bootstrap/graphs
 	rm -f examples/bootstrap/replicates.tsv
-	julia examples/bootstrap/generate_replicates.jl > examples/bootstrap/replicates.tsv
+	julia examples/bootstrap/generate_replicates.jl examples/bootstrap/replicates.tsv
 	mkdir examples/bootstrap/graphs
 	Rscript examples/bootstrap/analyze_replicates.R
 
